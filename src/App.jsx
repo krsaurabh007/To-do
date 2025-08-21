@@ -304,7 +304,7 @@ function TaskInput({ text, setText, inputRef, onAdd }) {
           onKeyDown={(e) => {
             if (e.key === "Enter") submit();
           }}
-          placeholder="Add a moment…"
+          placeholder="Write a tiny seed of hope…"
           className="flex-1 rounded-2xl bg-slate-900/50 px-4 py-3 outline-none ring-1 ring-white/10 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500"
         />
         {/* Button with floating animation */}
