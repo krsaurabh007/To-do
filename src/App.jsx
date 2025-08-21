@@ -1,5 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { UserRound, UserCircle } from "lucide-react";
+import { db } from "./firebase";
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  query,
+  orderBy
+} from "firebase/firestore";
 
 export default function App() {
   return (
@@ -65,70 +76,52 @@ function uuid() {
 }
 
 function TaskBoard() {
-  const [tasks, setTasks] = useState(() => loadTasks());
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState("all");
+  const [tasks, setTasks] = useState([]);
+  const [queryText, setQueryText] = useState("");
   const [showCompleted, setShowCompleted] = useState(false);
 
+  // 🔹 Real-time listener
   useEffect(() => {
-    saveTasks(tasks);
-  }, [tasks]);
+    const q = query(collection(db, "tasks"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const updatedTasks = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setTasks(updatedTasks);
+    });
+    return () => unsubscribe();
+  }, []);
 
-  const stats = useMemo(
-    () => ({
-      total: tasks.length,
-      done: tasks.filter((t) => t.completedAt).length,
-      active: tasks.filter((t) => !t.completedAt).length,
-    }),
-    [tasks]
-  );
-
-  const activeTasks = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    let out = tasks.filter((t) => !t.completedAt);
-    if (q) out = out.filter((t) => t.text.toLowerCase().includes(q));
-    return out;
-  }, [tasks, query]);
-
-  const completedTasks = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    let out = tasks.filter((t) => t.completedAt);
-    if (q) out = out.filter((t) => t.text.toLowerCase().includes(q));
-    return out;
-  }, [tasks, query]);
-
-  function addTask(text) {
-    const t = text.trim();
-    if (!t) return;
-    setTasks((prev) => [
-      {
-        id: uuid(),
-        text: t,
-        createdAt: Date.now(),
-        completedAt: null,
-      },
-      ...prev,
-    ]);
+  // 🔹 Add task
+  async function addTask(text) {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    await addDoc(collection(db, "tasks"), {
+      text: trimmed,
+      createdAt: Date.now(),
+      completedAt: null
+    });
   }
 
-  function completeTask(id) {
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === id && !t.completedAt ? { ...t, completedAt: Date.now() } : t
-      )
-    );
+  // 🔹 Complete task
+  async function completeTask(id) {
+    const taskRef = doc(db, "tasks", id);
+    await updateDoc(taskRef, { completedAt: Date.now() });
   }
 
-  function removeTask(id) {
-    setTasks((prev) => prev.filter((t) => t.id !== id));
+  // 🔹 Remove task
+  async function removeTask(id) {
+    const taskRef = doc(db, "tasks", id);
+    await deleteDoc(taskRef);
   }
 
+  // 🔹 Move up/down locally (optional, only affects order on your device)
   function move(id, dir) {
     setTasks((prev) => {
       const i = prev.findIndex((t) => t.id === id);
       if (i === -1) return prev;
-      const j =
-        dir === "up" ? Math.max(0, i - 1) : Math.min(prev.length - 1, i + 1);
+      const j = dir === "up" ? Math.max(0, i - 1) : Math.min(prev.length - 1, i + 1);
       if (i === j) return prev;
       const arr = [...prev];
       const [item] = arr.splice(i, 1);
@@ -136,6 +129,26 @@ function TaskBoard() {
       return arr;
     });
   }
+
+  const stats = useMemo(() => ({
+    total: tasks.length,
+    done: tasks.filter((t) => t.completedAt).length,
+    active: tasks.filter((t) => !t.completedAt).length
+  }), [tasks]);
+
+  const activeTasks = useMemo(() => {
+    const q = queryText.trim().toLowerCase();
+    let out = tasks.filter(t => !t.completedAt);
+    if (q) out = out.filter(t => t.text.toLowerCase().includes(q));
+    return out;
+  }, [tasks, queryText]);
+
+  const completedTasks = useMemo(() => {
+    const q = queryText.trim().toLowerCase();
+    let out = tasks.filter(t => t.completedAt);
+    if (q) out = out.filter(t => t.text.toLowerCase().includes(q));
+    return out;
+  }, [tasks, queryText]);
 
   return (
     <div className="space-y-6">
@@ -149,8 +162,8 @@ function TaskBoard() {
         </div>
         <div className="flex items-center gap-2 text-sm">
           <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            value={queryText}
+            onChange={(e) => setQueryText(e.target.value)}
             placeholder="Search Moments"
             className="w-full sm:w-56 rounded-xl bg-slate-900/50 px-3 py-2 text-sm outline-none ring-1 ring-white/10 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500"
           />
