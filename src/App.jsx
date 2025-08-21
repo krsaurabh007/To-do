@@ -9,7 +9,7 @@ import {
   doc,
   onSnapshot,
   query,
-  orderBy
+  orderBy,
 } from "firebase/firestore";
 
 export default function App() {
@@ -79,14 +79,15 @@ function TaskBoard() {
   const [tasks, setTasks] = useState([]);
   const [queryText, setQueryText] = useState("");
   const [showCompleted, setShowCompleted] = useState(false);
+  const inputRef = useRef(null);
 
-  // 🔹 Real-time listener
+  // 🔹 Real-time Firestore listener
   useEffect(() => {
     const q = query(collection(db, "tasks"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const updatedTasks = snapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
       setTasks(updatedTasks);
     });
@@ -94,134 +95,131 @@ function TaskBoard() {
   }, []);
 
   // 🔹 Add task
-  async function addTask(text) {
+  const addTask = async (text) => {
     const trimmed = text.trim();
     if (!trimmed) return;
     await addDoc(collection(db, "tasks"), {
       text: trimmed,
       createdAt: Date.now(),
-      completedAt: null
+      completedAt: null,
     });
-  }
+  };
 
   // 🔹 Complete task
-  async function completeTask(id) {
+  const completeTask = async (id) => {
     const taskRef = doc(db, "tasks", id);
     await updateDoc(taskRef, { completedAt: Date.now() });
-  }
+  };
 
   // 🔹 Remove task
-  async function removeTask(id) {
+  const removeTask = async (id) => {
     const taskRef = doc(db, "tasks", id);
     await deleteDoc(taskRef);
-  }
+  };
 
-  // 🔹 Move up/down locally (optional, only affects order on your device)
-  function move(id, dir) {
+  // 🔹 Move up/down locally (optional, does not affect Firestore)
+  const move = (id, dir) => {
     setTasks((prev) => {
       const i = prev.findIndex((t) => t.id === id);
       if (i === -1) return prev;
-      const j = dir === "up" ? Math.max(0, i - 1) : Math.min(prev.length - 1, i + 1);
+      const j =
+        dir === "up" ? Math.max(0, i - 1) : Math.min(prev.length - 1, i + 1);
       if (i === j) return prev;
       const arr = [...prev];
       const [item] = arr.splice(i, 1);
       arr.splice(j, 0, item);
       return arr;
     });
-  }
+  };
 
-  const stats = useMemo(() => ({
-    total: tasks.length,
-    done: tasks.filter((t) => t.completedAt).length,
-    active: tasks.filter((t) => !t.completedAt).length
-  }), [tasks]);
+  // 🔹 Stats
+  const stats = useMemo(
+    () => ({
+      total: tasks.length,
+      done: tasks.filter((t) => t.completedAt).length,
+      active: tasks.filter((t) => !t.completedAt).length,
+    }),
+    [tasks]
+  );
 
+  // 🔹 Filtered tasks
   const activeTasks = useMemo(() => {
     const q = queryText.trim().toLowerCase();
-    let out = tasks.filter(t => !t.completedAt);
-    if (q) out = out.filter(t => t.text.toLowerCase().includes(q));
+    let out = tasks.filter((t) => !t.completedAt);
+    if (q) out = out.filter((t) => t.text.toLowerCase().includes(q));
     return out;
   }, [tasks, queryText]);
 
   const completedTasks = useMemo(() => {
     const q = queryText.trim().toLowerCase();
-    let out = tasks.filter(t => t.completedAt);
-    if (q) out = out.filter(t => t.text.toLowerCase().includes(q));
+    let out = tasks.filter((t) => t.completedAt);
+    if (q) out = out.filter((t) => t.text.toLowerCase().includes(q));
     return out;
   }, [tasks, queryText]);
 
   return (
     <div className="space-y-6">
-      <TaskInput onAdd={addTask} />
-
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white/5 px-4 py-3 ring-1 ring-white/10">
-        <div className="flex items-center gap-2 text-sm">
-          <Badge>{stats.total} total</Badge>
-          <Badge>{stats.active} active</Badge>
-          <Badge>{stats.done} done</Badge>
-        </div>
-        <div className="flex items-center gap-2 text-sm">
+      {/* Task input */}
+      <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+        <div className="flex items-center gap-3">
           <input
+            ref={inputRef}
             value={queryText}
             onChange={(e) => setQueryText(e.target.value)}
-            placeholder="Search Moments"
-            className="w-full sm:w-56 rounded-xl bg-slate-900/50 px-3 py-2 text-sm outline-none ring-1 ring-white/10 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500"
+            placeholder="Add a moment and press Enter…"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                addTask(queryText);
+                setQueryText("");
+                inputRef.current?.focus();
+              }
+            }}
+            className="flex-1 rounded-2xl bg-slate-900/50 px-4 py-3 outline-none ring-1 ring-white/10 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500"
           />
         </div>
       </div>
 
+      {/* Stats */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white/5 px-4 py-3 ring-1 ring-white/10">
+        <div className="flex items-center gap-2 text-sm">
+          <span>{stats.total} total</span>
+          <span>{stats.active} active</span>
+          <span>{stats.done} done</span>
+        </div>
+      </div>
+
       {/* Active tasks */}
-      <div className="overflow-hidden rounded-2xl bg-white/5 ring-1 ring-white/10">
-        <ul className="divide-y divide-white/10">
-          {activeTasks.length === 0 && (
-            <li className="p-8 text-center text-slate-400">
-              No active moment. Add one above.
-            </li>
-          )}
-          {activeTasks.map((t, idx) => (
+      <ul className="divide-y divide-white/10">
+        {activeTasks.map((t) => (
+          <TaskRow
+            key={t.id}
+            task={t}
+            onComplete={completeTask}
+            onRemove={removeTask}
+            onMoveUp={() => move(t.id, "up")}
+            onMoveDown={() => move(t.id, "down")}
+          />
+        ))}
+      </ul>
+
+      {/* Completed tasks */}
+      <button onClick={() => setShowCompleted((s) => !s)}>
+        Completed ({completedTasks.length}) {showCompleted ? "▲" : "▼"}
+      </button>
+      {showCompleted && (
+        <ul>
+          {completedTasks.map((t) => (
             <TaskRow
               key={t.id}
               task={t}
-              index={idx}
               onComplete={completeTask}
               onRemove={removeTask}
-              onMoveUp={() => move(t.id, "up")}
-              onMoveDown={() => move(t.id, "down")}
+              onMoveUp={() => {}}
+              onMoveDown={() => {}}
             />
           ))}
         </ul>
-      </div>
-
-      {/* Completed tasks collapsible */}
-      <div className="rounded-2xl bg-white/5 ring-1 ring-white/10">
-        <button
-          onClick={() => setShowCompleted((s) => !s)}
-          className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-slate-200 hover:bg-white/10"
-        >
-          Completed Moments ({completedTasks.length})
-          <span>{showCompleted ? "▲" : "▼"}</span>
-        </button>
-        {showCompleted && (
-          <ul className="divide-y divide-white/10 bg-slate-900/40">
-            {completedTasks.length === 0 && (
-              <li className="p-6 text-center text-slate-400">
-                Nothing completed yet.
-              </li>
-            )}
-            {completedTasks.map((t) => (
-              <TaskRow
-                key={t.id}
-                task={t}
-                index={0}
-                onComplete={completeTask}
-                onRemove={removeTask}
-                onMoveUp={() => {}}
-                onMoveDown={() => {}}
-              />
-            ))}
-          </ul>
-        )}
-      </div>
+      )}
     </div>
   );
 }
@@ -261,69 +259,17 @@ function TaskInput({ onAdd }) {
   );
 }
 
-function TaskRow({ task, index, onComplete, onRemove, onMoveUp, onMoveDown }) {
+function TaskRow({ task, onComplete, onRemove, onMoveUp, onMoveDown }) {
   const completed = Boolean(task.completedAt);
-  const created = new Date(task.createdAt);
-  const completedDate = task.completedAt ? new Date(task.completedAt) : null;
-
   return (
-    <li className="group grid grid-cols-[auto_1fr_auto] items-center gap-4 p-4 hover:bg-white/3">
-      <div className="flex items-center gap-3">
-        <label
-          className={`relative flex h-6 w-6 items-center justify-center rounded-md ring-1 ${
-            completed
-              ? "bg-green-600/80 ring-green-400/50"
-              : "bg-slate-900/60 ring-white/10"
-          }`}
-        >
-          <input
-            type="checkbox"
-            checked={completed}
-            disabled={completed}
-            onChange={() => onComplete(task.id)}
-            className="peer absolute h-6 w-6 cursor-pointer opacity-0 disabled:cursor-not-allowed"
-          />
-          <span
-            className={`pointer-events-none inline-block h-4 w-4 rounded-sm ${
-              completed ? "bg-white" : "bg-transparent"
-            }`}
-          ></span>
-        </label>
-      </div>
-
-      <div className="min-w-0">
-        <div className="flex items-baseline gap-2">
-          <p
-            className={`truncate text-base font-medium ${
-              completed ? "text-slate-400 line-through" : "text-slate-100"
-            }`}
-          >
-            {task.text}
-          </p>
-          {completed && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-semibold text-green-300 ring-1 ring-green-500/30">
-              <LockIcon className="h-3 w-3" /> locked
-            </span>
-          )}
-        </div>
-        <p className="mt-1 text-xs text-slate-400">
-          added {created.toLocaleString()}{" "}
-          {completedDate && `• completed ${completedDate.toLocaleString()}`}
-        </p>
-      </div>
-
-      <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
-        <IconButton onClick={onMoveUp} title="Move up">
-          <UpIcon className="h-4 w-4" />
-        </IconButton>
-        <IconButton onClick={onMoveDown} title="Move down">
-          <DownIcon className="h-4 w-4" />
-        </IconButton>
-        <div className="w-px self-stretch bg-white/10" />
-        <IconButton onClick={() => onRemove(task.id)} title="Delete">
-          <TrashIcon className="h-4 w-4" />
-        </IconButton>
-      </div>
+    <li>
+      <span>{task.text}</span>
+      {!completed && (
+        <button onClick={() => onComplete(task.id)}>Complete</button>
+      )}
+      <button onClick={() => onRemove(task.id)}>Delete</button>
+      <button onClick={onMoveUp}>Up</button>
+      <button onClick={onMoveDown}>Down</button>
     </li>
   );
 }
