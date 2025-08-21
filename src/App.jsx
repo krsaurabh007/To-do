@@ -74,7 +74,6 @@ function SparklesBackground() {
   );
 }
 
-
 function Header() {
   return (
     <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -89,7 +88,7 @@ function Header() {
             Let's Create Memories
           </h1>
           <p className="text-slate-300/80">
-          Like flowers in a meadow, each moment blooms forever 🌸🌼🌿
+            Like flowers in a meadow, each moment blooms forever 🌸🌼🌿
           </p>
         </div>
       </div>
@@ -224,7 +223,7 @@ function TaskBoard() {
         <ul className="divide-y divide-white/10">
           {activeTasks.length === 0 && (
             <li className="p-8 text-center text-slate-400">
-              No active moment. Add one above.
+              🌱 Nothing planted yet — add a little memory seed!
             </li>
           )}
           {activeTasks.map((t) => (
@@ -254,7 +253,7 @@ function TaskBoard() {
           <ul className="divide-y divide-white/10 bg-slate-900/40">
             {completedTasks.length === 0 && (
               <li className="p-6 text-center text-slate-400">
-                Nothing completed yet.
+                🌸 No memories have bloomed yet.
               </li>
             )}
             {completedTasks.map((t) => (
@@ -345,9 +344,13 @@ function TaskRow({ task, onComplete, onRemove, onMoveUp, onMoveDown }) {
           >
             {task.text}
           </p>
-          {completed && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-semibold text-green-300 ring-1 ring-green-500/30">
-              🔒 locked
+          {completed ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-pink-500/10 px-2 py-0.5 text-[10px] sm:text-xs font-semibold text-pink-300 ring-1 ring-pink-500/30 break-words max-w-full">
+              🌸 Bloomed Memory
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] sm:text-xs font-semibold text-green-300 ring-1 ring-green-500/30 break-words max-w-full">
+              🌱 Growing Memory
             </span>
           )}
         </div>
@@ -396,7 +399,7 @@ function Badge({ children }) {
 function Footer() {
   return (
     <div className="mt-10 text-center text-xs text-slate-400">
-      Built with ❤️ — Stored in your ❤️
+      Made with 💚 — Memories bloom here 🌸
     </div>
   );
 }
