@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { UserRound, UserCircle } from "lucide-react";
 import { db } from "./firebase";
 import {
@@ -274,11 +275,22 @@ function TaskBoard() {
 }
 
 function TaskInput({ text, setText, inputRef, onAdd }) {
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [floaters, setFloaters] = useState([]);
   const submit = () => {
     if (!text.trim()) return;
     onAdd(text);
     setText("");
     inputRef.current?.focus();
+    setIsAnimating(true);
+    setTimeout(() => setIsAnimating(false), 600);
+
+    // add floating 🌱
+    const id = Date.now();
+    setFloaters((prev) => [...prev, id]);
+    setTimeout(() => {
+      setFloaters((prev) => prev.filter((f) => f !== id));
+    }, 1200);
   };
 
   return (
@@ -294,12 +306,42 @@ function TaskInput({ text, setText, inputRef, onAdd }) {
           placeholder="Add a moment…"
           className="flex-1 rounded-2xl bg-slate-900/50 px-4 py-3 outline-none ring-1 ring-white/10 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500"
         />
-        <button
-          onClick={submit}
-          className="w-full sm:w-auto rounded-2xl bg-indigo-500 px-5 py-3 font-medium shadow-lg shadow-indigo-900/40 transition active:scale-[.98] hover:bg-indigo-400 sm:px-6 sm:py-3"
-        >
-          Add
-        </button>
+        {/* Button with floating animation */}
+        <div className="relative flex justify-center">
+          <motion.button
+            onClick={submit}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.9, rotate: -5 }}
+            animate={
+              isAnimating
+                ? { scale: [1, 1.2, 0.95, 1.05, 1], rotate: [0, 5, -5, 3, 0] }
+                : {}
+            }
+            transition={{ duration: 0.6, ease: "easeInOut" }}
+            className="w-full sm:w-auto rounded-2xl bg-indigo-500 px-6 py-3
+           font-medium shadow-lg shadow-indigo-900/40 
+           hover:bg-indigo-400 active:scale-[.98] 
+           sm:px-6 sm:py-3"
+          >
+            <span className="text-base">Add</span>
+          </motion.button>
+
+          {/* Floating 🌱s */}
+          <AnimatePresence>
+            {floaters.map((id) => (
+              <motion.span
+                key={id}
+                initial={{ opacity: 0, y: 0, scale: 0.8 }}
+                animate={{ opacity: 1, y: -40, scale: 1 }}
+                exit={{ opacity: 0, y: -70, scale: 1.2 }}
+                transition={{ duration: 1 }}
+                className="absolute -top-2 text-lg"
+              >
+                🌱
+              </motion.span>
+            ))}
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );
