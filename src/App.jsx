@@ -380,7 +380,7 @@ function TaskRow({ task, onComplete, onRemove, onMoveUp, onMoveDown }) {
       <div className="min-w-0">
         <div className="flex items-baseline gap-2">
           <p
-            className={`truncate text-base font-medium ${
+            className={`text-base font-medium break-words whitespace-normal ${
               completed ? "text-slate-400 line-through" : "text-slate-100"
             }`}
           >
