@@ -14,8 +14,11 @@ import {
 
 export default function App() {
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 antialiased selection:bg-indigo-500/30">
-      <div className="mx-auto w-full max-w-full px-4 sm:max-w-2xl md:max-w-3xl py-8 sm:px-6 sm:py-12">
+    <div className="relative min-h-screen w-full overflow-hidden bg-gradient-to-br from-indigo-900 via-slate-800 to-indigo-900 text-slate-100 antialiased selection:bg-pink-400/30">
+      {/* Sparkle Layer */}
+      <SparklesBackground />
+
+      <div className="relative z-10 mx-auto w-full max-w-full px-4 sm:max-w-2xl md:max-w-3xl py-8 sm:px-6 sm:py-12">
         <Header />
         <TaskBoard />
         <Footer />
@@ -23,6 +26,54 @@ export default function App() {
     </div>
   );
 }
+
+function SparklesBackground() {
+  useEffect(() => {
+    const canvas = document.getElementById("sparkles");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const particles = Array.from({ length: 80 }).map(() => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 2 + 1,
+      d: Math.random() * 0.5 + 0.2,
+    }));
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "rgba(255,255,255,0.8)";
+      particles.forEach((p) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2, false);
+        ctx.fill();
+      });
+      update();
+    }
+
+    function update() {
+      particles.forEach((p) => {
+        p.y += p.d;
+        if (p.y > canvas.height) {
+          p.y = 0;
+          p.x = Math.random() * canvas.width;
+        }
+      });
+    }
+
+    const interval = setInterval(draw, 50);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <canvas
+      id="sparkles"
+      className="absolute inset-0 z-0 pointer-events-none"
+    />
+  );
+}
+
 
 function Header() {
   return (
@@ -38,8 +89,7 @@ function Header() {
             Let's Create Memories
           </h1>
           <p className="text-slate-300/80">
-            Add a moment you want to live with me. Complete once, locked
-            forever.
+            Add a moment you want to live with me.Once complete, it’s locked forever ✨
           </p>
         </div>
       </div>
