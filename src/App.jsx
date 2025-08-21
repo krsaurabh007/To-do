@@ -162,7 +162,7 @@ function TaskBoard() {
         <ul className="divide-y divide-white/10">
           {activeTasks.length === 0 && (
             <li className="p-8 text-center text-slate-400">
-              No active tasks. Add one above.
+              No active moment. Add one above.
             </li>
           )}
           {activeTasks.map((t, idx) => (
