@@ -221,7 +221,7 @@ function TaskBoard() {
 
       {/* Active Tasks */}
       <div className="overflow-hidden rounded-2xl bg-white/5 ring-1 ring-white/10">
-        <ul className="divide-y divide-white/10">
+      <ul className="divide-y divide-white/10 max-h-96 overflow-y-auto">
           {activeTasks.length === 0 && (
             <li className="p-8 text-center text-slate-400">
               🌱 Nothing planted yet — add a little memory seed!
@@ -251,7 +251,7 @@ function TaskBoard() {
         </button>
 
         {showCompleted && (
-          <ul className="divide-y divide-white/10 bg-slate-900/40">
+          <ul className="divide-y divide-white/10 bg-slate-900/40 max-h-80 overflow-y-auto">
             {completedTasks.length === 0 && (
               <li className="p-6 text-center text-slate-400">
                 🌸 No memories have bloomed yet.
@@ -265,6 +265,7 @@ function TaskBoard() {
                 onRemove={removeTask}
                 onMoveUp={() => {}}
                 onMoveDown={() => {}}
+                showDelete={false}
               />
             ))}
           </ul>
@@ -347,7 +348,14 @@ function TaskInput({ text, setText, inputRef, onAdd }) {
   );
 }
 
-function TaskRow({ task, onComplete, onRemove, onMoveUp, onMoveDown }) {
+function TaskRow({
+  task,
+  onComplete,
+  onRemove,
+  onMoveUp,
+  onMoveDown,
+  showDelete = true,
+}) {
   const completed = Boolean(task.completedAt);
   const created = new Date(task.createdAt);
   const completedDate = task.completedAt ? new Date(task.completedAt) : null;
@@ -403,28 +411,38 @@ function TaskRow({ task, onComplete, onRemove, onMoveUp, onMoveDown }) {
       </div>
 
       <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
-        <button
-          onClick={onMoveUp}
-          title="Move up"
-          className="rounded-lg p-2 text-slate-300 ring-1 ring-white/10 hover:bg-white/10 hover:text-white active:scale-[.98]"
-        >
-          ⬆️
-        </button>
-        <button
-          onClick={onMoveDown}
-          title="Move down"
-          className="rounded-lg p-2 text-slate-300 ring-1 ring-white/10 hover:bg-white/10 hover:text-white active:scale-[.98]"
-        >
-          ⬇️
-        </button>
-        <div className="w-px self-stretch bg-white/10" />
-        <button
-          onClick={() => onRemove(task.id)}
-          title="Delete"
-          className="rounded-lg p-2 text-slate-300 ring-1 ring-white/10 hover:bg-white/10 hover:text-white active:scale-[.98]"
-        >
-          🗑️
-        </button>
+        {!completed && ( // ⬅️ Hide move buttons when completed
+          <>
+            <button
+              onClick={onMoveUp}
+              title="Move up"
+              className="rounded-lg p-2 text-slate-300 ring-1 ring-white/10 hover:bg-white/10 hover:text-white active:scale-[.98]"
+            >
+              ⬆️
+            </button>
+            <button
+              onClick={onMoveDown}
+              title="Move down"
+              className="rounded-lg p-2 text-slate-300 ring-1 ring-white/10 hover:bg-white/10 hover:text-white active:scale-[.98]"
+            >
+              ⬇️
+            </button>
+          </>
+        )}
+
+        {showDelete &&
+          !completed && ( // ⬅️ Hide delete button for completed
+            <>
+              <div className="w-px self-stretch bg-white/10" />
+              <button
+                onClick={() => onRemove(task.id)}
+                title="Delete"
+                className="rounded-lg p-2 text-slate-300 ring-1 ring-white/10 hover:bg-white/10 hover:text-white active:scale-[.98]"
+              >
+                🗑️
+              </button>
+            </>
+          )}
       </div>
     </li>
   );
