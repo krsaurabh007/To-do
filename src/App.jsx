@@ -89,7 +89,7 @@ function Header() {
             Let's Create Memories
           </h1>
           <p className="text-slate-300/80">
-            Add a moment you want to live with me.Once complete, it’s locked forever ✨
+          Like flowers in a meadow, each moment blooms forever 🌸🌼🌿
           </p>
         </div>
       </div>
