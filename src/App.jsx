@@ -27,13 +27,21 @@ export default function App() {
 function Header() {
   return (
     <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-          Ye sab karna hai
-        </h1>
-        <p className="text-slate-300/80">
-          Add a moment you want to live with me. Complete once, locked forever.
-        </p>
+      <div className="flex items-center gap-4">
+        <img
+          src="/BG_LOGO.png"
+          alt="Logo"
+          className="w-14 h-14 object-contain"
+        />
+        <div>
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight">
+            Let's Create Memories
+          </h1>
+          <p className="text-slate-300/80">
+            Add a moment you want to live with me. Complete once, locked
+            forever.
+          </p>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-slate-700/50 px-4 py-2 text-xs sm:text-sm text-slate-200 shadow-inner shadow-black/30 ring-1 ring-white/10">
